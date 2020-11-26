@@ -42,7 +42,7 @@ jobs:
             --s3-bucket "$SAM_BUCKET" \
             --s3-prefix "$BASE_STACK_NAME" \
             --capabilities=CAPABILITY_IAM \
-            --parameter-overrides CorsAllowedOrigins="https://$DOMAIN_NAME"
+            --parameter-overrides CorsAllowedOrigins="https://$DOMAIN_NAME,http://$DOMAIN_NAME.s3-website-us-east-1.amazonaws.com"
 
   Build-Deploy-Frontend:
     needs: Build-Deploy-Backend

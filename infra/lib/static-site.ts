@@ -27,7 +27,8 @@ export class StaticSite extends cdk.Stack {
     const siteBucket = new s3.Bucket(this, siteDomain + '-SiteBucket', {
       bucketName: siteDomain,
       websiteIndexDocument: 'index.html',
-      websiteErrorDocument: 'index.html', // index for SPA, error for non-SPA
+      websiteErrorDocument: 'index.html', // index for SPA, error for non-SPA,
+      publicReadAccess: true
     });
     new cdk.CfnOutput(this, 'Bucket', { value: siteBucket.bucketName });
 
