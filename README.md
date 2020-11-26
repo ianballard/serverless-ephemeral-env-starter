@@ -32,6 +32,10 @@ without having to first merge the features into a long-lived branch. When code i
 are no longer able to *easily* pull individual features out if priorities change, the feature is not working, or any other 
 reason; the possibilities for this are endless. 
 
+### Live Sites
+ - [master](http://serverless-ephemeral-env-starter.s3-website-us-east-1.amazonaws.com/)
+ - [feature/A-1](http://a-1.serverless-ephemeral-env-starter.s3-website-us-east-1.amazonaws.com/)
+
 ### Prerequisites
 1. [aws account](https://aws.amazon.com/free)
     - Take note of your access and secret keys. You will need them later.
@@ -58,7 +62,7 @@ reason; the possibilities for this are endless.
         - If this is your first time using sam, you will need to 
         [create a bucket](https://docs.aws.amazon.com/AmazonS3/latest/user-guide/create-bucket.html) first
         - Edit the bucket policy. Go to the bucket > Permissions > Bucket Policy > Edit:
-        `
+        ```
         {
             "Version": "2008-10-17",
             "Statement": [
@@ -68,11 +72,11 @@ reason; the possibilities for this are endless.
                         "Service": "serverlessrepo.amazonaws.com"
                     },
                     "Action": "s3:GetObject",
-                    "Resource": "<your new bucket arn>/*"
+                    "Resource": "<your sam bucket arn>/*"
                 }
             ]
         }
-        `
+        ```
     - EXCLUDE_EPHEMERAL_CDN - set this to true if you do not want to deploy your site to cloud front. 
     Otherwise, do not add it to the secrets.
         - **Note**  deploying to cloudfront has many dependencies that require validation and can increase deployment 
@@ -107,8 +111,10 @@ reason; the possibilities for this are endless.
         - You can view the status of your action in your project repo and select the Actions tab.
         - If you have EXCLUDE_EPHEMERAL_CDN set to true in your repository secrets, this process can take 3-5 minutes. 
         After it is done your ephemeral environment is up and running. You can navigate to it by entering 
-        http://<your branch name ALL lowercase (exclude feature/ if you are using gitflow notation)>.<your domain name>.s3-website-us-east-1.amazonaws.com
+        http://<branch name (lowercase & exclude gitflow prefix)>.<your domain name>.s3-website-us-east-1.amazonaws.com
         in your browser.
+            - EX: branch name= feature/A-1 
+                - *http://a-1.serverless-ephemeral-env-starter.s3-website-us-east-1.amazonaws.com*
             - You can also find it by going to the AWS console > CloudFormation > {{your base name}}-StaticSite stack > BucketWebsiteDomainName value
         - If you don't have EXCLUDE_EPHEMERAL_CDN set to true in your repository secrets, this process can take upwards 
         of 30+ minutes. After it is done there may be some DNS propagation that needs to occur before you can see your site live.
