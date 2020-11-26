@@ -109,6 +109,7 @@ reason; the possibilities for this are endless.
         After it is done your ephemeral environment is up and running. You can navigate to it by entering 
         http://<your branch name ALL lowercase (exclude feature/ if you are using gitflow notation)>.<your domain name>.s3-website-us-east-1.amazonaws.com
         in your browser.
+            - You can also find it by going to the AWS console > CloudFormation > {{your base name}}-StaticSite stack > BucketWebsiteDomainName value
         - If you don't have EXCLUDE_EPHEMERAL_CDN set to true in your repository secrets, this process can take upwards 
         of 30+ minutes. After it is done there may be some DNS propagation that needs to occur before you can see your site live.
         Eventually, you can see it by entering your ephemeral site in your browser.
