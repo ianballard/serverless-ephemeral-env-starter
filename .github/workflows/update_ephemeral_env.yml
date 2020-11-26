@@ -37,13 +37,15 @@ jobs:
         run: |
           echo "Deploying Api Stack: ${GITHUB_HEAD_REF#*/}-$$BASE_STACK_NAME-API"
           cd ./backend
+          SUB_DOMAIN="${GITHUB_HEAD_REF#*/}"
+          SUB_DOMAIN="${SUB_DOMAIN,,}"
           sam deploy --stack-name "${GITHUB_HEAD_REF#*/}-$BASE_STACK_NAME-API" \
             --region us-east-1 \
             --no-fail-on-empty-changeset \
             --s3-bucket "$SAM_BUCKET" \
             --s3-prefix "$BASE_STACK_NAME" \
             --capabilities=CAPABILITY_IAM \
-            --parameter-overrides CorsAllowedOrigins="https://${GITHUB_HEAD_REF#*/}.$DOMAIN_NAME,http://${GITHUB_HEAD_REF#*/}.$DOMAIN_NAME.s3-website-us-east-1.amazonaws.com"
+            --parameter-overrides CorsAllowedOrigins="https://$SUB_DOMAIN.$DOMAIN_NAME,http://$SUB_DOMAIN.$DOMAIN_NAME.s3-website-us-east-1.amazonaws.com"
 
   Build-Deploy-Frontend:
     needs: Build-Deploy-Backend
