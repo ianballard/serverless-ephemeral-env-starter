@@ -46,9 +46,7 @@ reason; the possibilities for this are endless.
 1. Click the "Use this template" button
 2. Enter the Repository name of your choosing. 
 3. Clone your new repo locally
-4. Establish a "base stack name". If your website is called helloworld.com, 
-your base stack name is helloworld-com (stack names cannot have '.') . Take note of this base stack name for later steps.
-5. Create your main Static Site Stack (this should be a one time operation)
+4. Create your main Static Site Stack (this should be a one time operation)
     - Navigate to ./infra
     - run `npm run build`
     - If you have a registered domain and wish to deploy to cloudfront
@@ -57,34 +55,50 @@ your base stack name is helloworld-com (stack names cannot have '.') . Take note
         to have this registered with a domain registrar like 
         ([route 53](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/domain-register.html)).
         - run `cdk diff -c domain=<your website domain>`
-        - run `cdk deploy -c domain=<your website domain>`
+        - run `cdk deploy -c domain=<your website domain> --all`
     - If you do not have a registered domain or do not wish to deploy to cloudfront 
     (this will only use [s3 site hosting](https://docs.aws.amazon.com/AmazonS3/latest/dev/WebsiteHosting.html))
-        - run `cdk diff -c domain=<your website domain> excludeCDN=true`
-        - run `cdk deploy -c domain=<your website domain> excludeCDN=true`
-6. Update your Repository secrets
+        - run `cdk diff -c domain=<your website domain> -c excludeCDN=true`
+        - run `cdk deploy -c domain=<your website domain> -c excludeCDN=true --all`
+5. Update your Repository secrets
     Navigate to your repo on github and select Settings > Secrets > New repository secret 
     - AWS_ACCESS_KEY_ID - your aws account access key id
     - AWS_SECRET_ACCESS_KEY - your secret access key
     - DOMAIN_NAME - your website name 
-    - BASE_STACK_NAME - from step 4. this is used for creating the 
+    - BASE_STACK_NAME - your website name but replace all '.' with '-' 
     [cloud formation stacks](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/stacks.html) that will 
     allow us to easily build, update, and destroy ephemeral environments.
     - SAM_BUCKET - the bucket aws sam will upload its templates to
         - If this is your first time using sam, you will need to 
         [create a bucket](https://docs.aws.amazon.com/AmazonS3/latest/user-guide/create-bucket.html) first
+        - Edit the bucket policy. Go to the bucket > Permissions > Bucket Policy > Edit:
+        `
+        {
+            "Version": "2008-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Principal": {
+                        "Service": "serverlessrepo.amazonaws.com"
+                    },
+                    "Action": "s3:GetObject",
+                    "Resource": "<your new bucket arn>/*"
+                }
+            ]
+        }
+        `
     - EXCLUDE_EPHEMERAL_CDN - set this to true if you do not want to deploy your site to cloud front. 
     Otherwise, do not add it to the secrets.
         - **Note**  deploying to cloudfront has many dependencies that require validation and can increase deployment 
         times to upwards of 30 minutes, and in some cases can cause timeouts.
-7. Build and deploy your main backend (master)
+6. Build and deploy your main backend (master)
     - Check out master locally
     - Navigate to ./backend/app
     - On line 17, change "hello world" to any message you want
     - Push this change to the remote master branch. This will kick off the Main CI/CD github action.
         - You can view the status of your action in your project repo and select the Actions tab.
     - After this completes your "prod" environment is up and running.
-8. Create a feature branch off of master. You can use gitflow naming conventions or just any old name you want.
+7. Create a feature branch off of master. You can use gitflow naming conventions or just any old name you want.
     - Navigate to ./backend/app
     - Once again, on line 17, change the message.
     - Push this change to the remote feature branch. 
@@ -99,12 +113,12 @@ your base stack name is helloworld-com (stack names cannot have '.') . Take note
         of 30+ minutes. After it is done there may be some DNS propagation that needs to occur before you can see your site live.
         Eventually, you can see it by entering your ephemeral site in your browser.
     - Make sure the message you changed in the backend is displayed on your site.
-9. Make another change to the backend message on line 17 in ./backend/app and push it to the remote branch
+8. Make another change to the backend message on line 17 in ./backend/app and push it to the remote branch
     - This will kick off the Update Ephemeral Env CI/CD github action.
     - You can view the status of your action in your project repo and select the Actions tab.
     - After it is done your ephemeral environment you can make sure the message you changed in the backend is 
     displayed on your ephemeral site.
-10. Merge the pull request into master
+9. Merge the pull request into master
     - This will kick off the Delete Ephemeral Env CI/CD github action.
     - This will also kick off the Main CI/CD github action and deploy the branch to prod.
     - Make sure the message you changed in the backend is displayed on your prod site.
