@@ -70,7 +70,6 @@ jobs:
             --output text)
           echo "Building frontend with API URL: $API_URL"
           REACT_APP_BASE_URL="$API_URL" REACT_APP_BRANCH="${GITHUB_HEAD_REF}" npm run-script build
-          npm run-script build
       - name: Invalidate CDN Cache
         if: env.EXCLUDE_EPHEMERAL_CDN != 'true'
         run: |
