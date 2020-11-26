@@ -46,21 +46,7 @@ reason; the possibilities for this are endless.
 1. Click the "Use this template" button
 2. Enter the Repository name of your choosing. 
 3. Clone your new repo locally
-4. Create your main Static Site Stack (this should be a one time operation)
-    - Navigate to ./infra
-    - run `npm run build`
-    - If you have a registered domain and wish to deploy to cloudfront
-        - If wish to deploy to 
-        [cloudfront](https://aws.amazon.com/premiumsupport/knowledge-center/cloudfront-https-requests-s3/) you need 
-        to have this registered with a domain registrar like 
-        ([route 53](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/domain-register.html)).
-        - run `cdk diff -c domain=<your website domain>`
-        - run `cdk deploy -c domain=<your website domain> --all`
-    - If you do not have a registered domain or do not wish to deploy to cloudfront 
-    (this will only use [s3 site hosting](https://docs.aws.amazon.com/AmazonS3/latest/dev/WebsiteHosting.html))
-        - run `cdk diff -c domain=<your website domain> -c excludeCDN=true`
-        - run `cdk deploy -c domain=<your website domain> -c excludeCDN=true --all`
-5. Update your Repository secrets
+4. Update your Repository secrets
     Navigate to your repo on github and select Settings > Secrets > New repository secret 
     - AWS_ACCESS_KEY_ID - your aws account access key id
     - AWS_SECRET_ACCESS_KEY - your secret access key
@@ -91,6 +77,20 @@ reason; the possibilities for this are endless.
     Otherwise, do not add it to the secrets.
         - **Note**  deploying to cloudfront has many dependencies that require validation and can increase deployment 
         times to upwards of 30 minutes, and in some cases can cause timeouts.
+5. Create your main Static Site Stack (this should be a one time operation)
+    - Navigate to ./infra
+    - run `npm run build`
+    - If you have a registered domain and wish to deploy to cloudfront
+        - If wish to deploy to 
+        [cloudfront](https://aws.amazon.com/premiumsupport/knowledge-center/cloudfront-https-requests-s3/) you need 
+        to have this registered with a domain registrar like 
+        ([route 53](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/domain-register.html)).
+        - run `cdk diff -c domain=<your website domain>`
+        - run `cdk deploy -c domain=<your website domain> --all`
+    - If you do not have a registered domain or do not wish to deploy to cloudfront 
+    (this will only use [s3 site hosting](https://docs.aws.amazon.com/AmazonS3/latest/dev/WebsiteHosting.html))
+        - run `cdk diff -c domain=<your website domain> -c excludeCDN=true`
+        - run `cdk deploy -c domain=<your website domain> -c excludeCDN=true --all`
 6. Build and deploy your main backend (master)
     - Check out master locally
     - Navigate to ./backend/app
