@@ -55,8 +55,8 @@ reason; the possibilities for this are endless.
     - AWS_ACCESS_KEY_ID - your aws account access key id
     - AWS_SECRET_ACCESS_KEY - your secret access key
     - DOMAIN_NAME - your website name 
-    - BASE_STACK_NAME - your website name but replace all '.' with '-' 
-    [cloud formation stacks](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/stacks.html) that will 
+    - BASE_STACK_NAME - your website name but replace all '.' with '-'.
+    This will be used for [cloud formation stacks](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/stacks.html) that will 
     allow us to easily build, update, and destroy ephemeral environments.
     - SAM_BUCKET - the bucket aws sam will upload its templates to
         - If this is your first time using sam, you will need to 
@@ -111,7 +111,7 @@ reason; the possibilities for this are endless.
         - You can view the status of your action in your project repo and select the Actions tab.
         - If you have EXCLUDE_EPHEMERAL_CDN set to true in your repository secrets, this process can take 3-5 minutes. 
         After it is done your ephemeral environment is up and running. You can navigate to it by entering 
-        http://<branch name (lowercase & exclude gitflow prefix)>.<your domain name>.s3-website-us-east-1.amazonaws.com
+        http://{{branch name (lowercase & exclude gitflow prefix)}}.{{your domain name}}.s3-website-us-east-1.amazonaws.com
         in your browser.
             - EX: branch name= feature/A-1 
                 - *http://a-1.serverless-ephemeral-env-starter.s3-website-us-east-1.amazonaws.com*
