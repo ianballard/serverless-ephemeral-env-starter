@@ -1,0 +1,107 @@
+name: Create Ephemeral Env CI/CD
+on:
+  pull_request:
+    branches: [ master ]
+    types: [opened]
+
+env:
+  DOMAIN_NAME: ${{ secrets.DOMAIN_NAME }}
+  BASE_STACK_NAME: ${{ secrets.BASE_STACK_NAME }}
+  SAM_BUCKET: ${{ secrets.SAM_BUCKET }}
+  EXCLUDE_EPHEMERAL_CDN: ${{ secrets.EXCLUDE_EPHEMERAL_CDN }}
+
+jobs:
+  Build-Deploy-Backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+      - name: Install backend dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install aws-sam-cli==1.2.0
+      - name: Build backend
+        run: |
+          cd ./backend
+          sam build
+          cd ../
+      - name: Deploy backend
+        run: |
+          echo "Deploying Api Stack: ${GITHUB_HEAD_REF#*/}-$BASE_STACK_NAME-API"
+          cd ./backend
+          sam deploy --stack-name "${GITHUB_HEAD_REF#*/}-$BASE_STACK_NAME-API" \
+            --region us-east-1 \
+            --no-fail-on-empty-changeset \
+            --s3-bucket "$SAM_BUCKET" \
+            --s3-prefix "$BASE_STACK_NAME" \
+            --capabilities=CAPABILITY_IAM \
+            --parameter-overrides CorsAllowedOrigins="https://${GITHUB_HEAD_REF#*/}.$DOMAIN_NAME,http://${GITHUB_HEAD_REF#*/}.$DOMAIN_NAME.s3-website-us-east-1.amazonaws.com"
+          cd ../
+
+  Build-Deploy-Frontend:
+    needs: Build-Deploy-Backend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+      - name: Set up Node
+        uses: actions/setup-node@v1
+        with:
+          node-version: '12'
+      - name: Build frontend
+        run: |
+          cd ./frontend
+          npm install
+          echo "Getting api stack: ${GITHUB_HEAD_REF#*/}-$BASE_STACK_NAME-API"
+          API_URL=$(aws cloudformation describe-stacks \
+            --stack-name "${GITHUB_HEAD_REF#*/}-$BASE_STACK_NAME-API" \
+            --query 'Stacks[0].Outputs[?OutputKey==`ApiURL`].OutputValue' \
+            --output text)
+          echo "Building frontend with API URL: $API_URL"
+          REACT_APP_BASE_URL="$API_URL" REACT_APP_BRANCH="${GITHUB_HEAD_REF}" npm run-script build
+      - name: Deploy frontend infra
+        run: |
+          cd ./infra
+          npm install
+          sudo npm install -g aws-cdk@1.75.0
+          npm run build
+          echo "Deploying Static Site Stack with subdomain: ${GITHUB_HEAD_REF#*/}"
+          cdk diff -c subdomain="${GITHUB_HEAD_REF#*/}" \
+            -c domain="$DOMAIN_NAME" \
+            -c excludeCDN="$EXCLUDE_EPHEMERAL_CDN"
+          cdk deploy -c subdomain="${GITHUB_HEAD_REF#*/}" \
+            -c domain="$DOMAIN_NAME" \
+            -c excludeCDN="$EXCLUDE_EPHEMERAL_CDN" \
+            --all --require-approval never
+      - name: Invalidate CDN Cache
+        if: env.EXCLUDE_EPHEMERAL_CDN != 'true'
+        run: |
+          aws configure set preview.cloudfront true
+          DISTRIBUTION_ID=$(aws cloudformation describe-stacks \
+          --stack-name "${GITHUB_HEAD_REF#*/}-$BASE_STACK_NAME-StaticSite" \
+          --query 'Stacks[0].Outputs[?OutputKey==`DistributionId`].OutputValue' \
+          --output text)
+          aws cloudfront create-invalidation --distribution-id "$DISTRIBUTION_ID" --paths "/*"
+
+      - name: Deploy frontend static content
+        run: |
+          cd ./frontend
+          BUCKET=$(aws cloudformation describe-stacks \
+            --stack-name "${GITHUB_HEAD_REF#*/}-$BASE_STACK_NAME-StaticSite" \
+            --query 'Stacks[0].Outputs[?OutputKey==`Bucket`].OutputValue' \
+            --output text)
+          aws s3 sync ./build/ s3://"$BUCKET" --delete --acl public-read

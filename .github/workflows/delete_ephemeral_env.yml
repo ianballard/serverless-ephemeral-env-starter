@@ -1,0 +1,30 @@
+name: Delete Ephemeral Env CI/CD
+on:
+  pull_request:
+    branches: [ master ]
+    types: [closed]
+
+env:
+  BASE_STACK_NAME: ${{ secrets.BASE_STACK_NAME }}
+
+jobs:
+  Delete-Backend-and-Frontend-Stacks:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v2
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+      - name: Delete Stacks
+        run: |
+          aws cloudformation delete-stack --stack-name "${GITHUB_HEAD_REF#*/}-$BASE_STACK_NAME-API"
+          BUCKET=$(aws cloudformation describe-stacks \
+            --stack-name "${GITHUB_HEAD_REF#*/}-$BASE_STACK_NAME-StaticSite" \
+            --query 'Stacks[0].Outputs[?OutputKey==`Bucket`].OutputValue' \
+            --output text)
+          aws s3 rb s3://"$BUCKET" --force
+          aws cloudformation delete-stack --stack-name "${GITHUB_HEAD_REF#*/}-$BASE_STACK_NAME-StaticSite"
