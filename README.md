@@ -51,7 +51,7 @@ reason; the possibilities for this are endless.
 2. Enter the Repository name of your choosing. 
 3. Clone your new repo locally
 4. Update your Repository secrets
-    Navigate to your repo on github and select Settings > Secrets > New repository secret 
+    - Navigate to your repo on github and select Settings > Secrets > New repository secret 
     - AWS_ACCESS_KEY_ID - your aws account access key id
     - AWS_SECRET_ACCESS_KEY - your secret access key
     - DOMAIN_NAME - your website name 
