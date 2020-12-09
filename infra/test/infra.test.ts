@@ -10,7 +10,8 @@ test('Empty Stack', () => {
         {
             domainName: 'test.com',
             siteSubDomain: 'www',
-            excludeCDN: false
+            excludeCDN: false,
+            reusableCDN: false
     });
     // THEN
     expectCDK(stack).to(matchTemplate({

@@ -36,14 +36,13 @@ class StaticSiteStack extends cdk.Stack {
         new StaticSite(this, stackName, stackProps,{
             domainName,
             siteSubDomain,
-            excludeCDN: this.node.tryGetContext('excludeCDN') || false
+            excludeCDN: this.node.tryGetContext('excludeCDN') || false,
+            reusableCDN: this.node.tryGetContext('reusableCDN') || false
         });
     }
 }
 
 const app = new cdk.App();
-
-
 
 new StaticSiteStack(app, 'StaticSite', { env: env});
 
