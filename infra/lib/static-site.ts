@@ -1,15 +1,19 @@
 import cloudfront = require('@aws-cdk/aws-cloudfront');
 import route53 = require('@aws-cdk/aws-route53');
 import s3 = require('@aws-cdk/aws-s3');
-import acm = require('@aws-cdk/aws-certificatemanager');
 import cdk = require('@aws-cdk/core');
 import targets = require('@aws-cdk/aws-route53-targets/lib');
-import { Construct } from '@aws-cdk/core';
+import {Construct, Duration} from '@aws-cdk/core';
+import {LambdaEdgeEventType} from "@aws-cdk/aws-cloudfront";
+import {Code, Function, Runtime} from '@aws-cdk/aws-lambda';
+import {CompositePrincipal, ManagedPolicy, Role, ServicePrincipal} from "@aws-cdk/aws-iam";
+import acm = require('@aws-cdk/aws-certificatemanager');
 
 export interface StaticSiteProps {
   domainName: string;
   siteSubDomain: string;
   excludeCDN: boolean;
+  reusableCDN: boolean;
 }
 
 
@@ -40,6 +44,73 @@ export class StaticSite extends cdk.Stack {
 
       const zone = route53.HostedZone.fromLookup(this, 'Zone', { domainName: staticSiteProps.domainName });
 
+      let behavior = {isDefaultBehavior: true}
+
+      if (staticSiteProps.reusableCDN) {
+
+        const modifyOriginRequestFunction = new Function(this, 'ModifyOriginRequest', {
+          code: Code.fromInline(
+          `
+                'use strict';
+
+                exports.handler = (event, context, callback) => {
+                    const request = event.Records[0].cf.request;
+                    const headers = request.headers;
+                    const origin = request.origin;
+                    console.log('URI: ' + request.uri);
+                    if (headers.cookie) {
+                        for (let i = 0; i < headers.cookie.length; i++) {
+                            if (headers.cookie[i].value.includes('origin')) {
+                                console.log('Origin cookie found: ' + headers.cookie[i].value);
+                                let target = headers.cookie[i].value.replace('origin=', '') + ".${staticSiteProps.domainName}.s3.amazonaws.com"
+                                headers['host'] = [{key: 'host',          value: target}];
+                                origin.s3.domainName = target;
+                                console.log('Modified target: ' + target);
+                                break;
+                            }
+                        }
+                    }
+                
+                    callback(null, request);
+                };
+
+               `),
+          handler: 'index.handler',
+          runtime: Runtime.NODEJS_12_X,
+          role: new Role(this, 'LambdaEdgeRole', {
+            assumedBy: new CompositePrincipal(
+                new ServicePrincipal('lambda.amazonaws.com'),
+                new ServicePrincipal('edgelambda.amazonaws.com'),
+            ),
+            managedPolicies: [
+              ManagedPolicy.fromAwsManagedPolicyName("service-role/AWSLambdaBasicExecutionRole")
+            ],
+          })
+        });
+
+        behavior = {
+          isDefaultBehavior: true,
+          // @ts-ignore
+          defaultTtl: Duration.seconds(0),
+          forwardedValues: {
+            cookies: {
+              forward: 'whitelist',
+              whitelistedNames: ['origin']
+            },
+            queryString: false
+          },
+          lambdaFunctionAssociations: [
+            {
+              eventType: LambdaEdgeEventType.ORIGIN_REQUEST,
+              lambdaFunction: {
+                edgeArn: modifyOriginRequestFunction.currentVersion.functionArn
+              }
+            }
+          ]
+        }
+
+      }
+
       // TLS certificate
       const certificateArn = new acm.DnsValidatedCertificate(this, siteDomain + '-SiteCertificate', {
         domainName: siteDomain,
@@ -49,7 +120,7 @@ export class StaticSite extends cdk.Stack {
       new cdk.CfnOutput(this, 'Certificate', { value: certificateArn });
 
       // CloudFront distribution that provides HTTPS
-      const distribution = new cloudfront.CloudFrontWebDistribution(this, siteDomain + '- SiteDistribution', {
+      const distribution = new cloudfront.CloudFrontWebDistribution(this, siteDomain + '-SiteDistribution', {
         aliasConfiguration: {
           acmCertRef: certificateArn,
           names: [ siteDomain ],
@@ -61,7 +132,7 @@ export class StaticSite extends cdk.Stack {
             s3OriginSource: {
               s3BucketSource: siteBucket
             },
-            behaviors : [ {isDefaultBehavior: true}],
+            behaviors : [ behavior ],
           }
         ],
         //for SPA apps with routing
@@ -75,6 +146,8 @@ export class StaticSite extends cdk.Stack {
         ]
       });
       new cdk.CfnOutput(this, 'DistributionId', { value: distribution.distributionId });
+
+      new cdk.CfnOutput(this, 'DistributionDomainName', { value: distribution.distributionDomainName });
 
       // Route53 alias record for the CloudFront distribution
       new route53.ARecord(this, siteDomain + '-SiteAliasRecord', {

@@ -16,6 +16,11 @@ Parameters:
   CorsAllowedOrigins:
     Type: String
     Description: CORS origins allowed access to the API
+  Branch:
+    Type: String
+    Description: Branch Name. Used if template is creating a stack for an ephemeral env.
+    Default: ""
+
 
 Resources:
   ApiFunction:
@@ -30,6 +35,26 @@ Resources:
           Properties:
             Path: /api
             Method: get
+
+  CronJob:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: app/
+      Handler: app.job
+      Runtime: python3.8
+      Events:
+        CronEvent:
+          Type: Schedule
+          Properties:
+            Schedule: cron(0 12 * * ? *)
+#            To demonstrate how to handle cases where resource names are set (causing potential conflicts between stacks)
+            Name: !Join
+              - ''
+              - - 'job-cron-event'
+                - !Ref Branch
+            Description: Job run daily at 12pm
+            Enabled: True
+
 
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function

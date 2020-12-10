@@ -9,6 +9,7 @@ env:
   BASE_STACK_NAME: ${{ secrets.BASE_STACK_NAME }}
   SAM_BUCKET: ${{ secrets.SAM_BUCKET }}
   EXCLUDE_EPHEMERAL_CDN: ${{ secrets.EXCLUDE_EPHEMERAL_CDN }}
+  REUSABLE_CDN: ${{ secrets.REUSABLE_CDN }}
 
 jobs:
   Build-Deploy-Backend:
@@ -45,7 +46,8 @@ jobs:
             --s3-bucket "$SAM_BUCKET" \
             --s3-prefix "$BASE_STACK_NAME" \
             --capabilities=CAPABILITY_IAM \
-            --parameter-overrides CorsAllowedOrigins="https://$SUB_DOMAIN.$DOMAIN_NAME,http://$SUB_DOMAIN.$DOMAIN_NAME.s3-website-us-east-1.amazonaws.com"
+            --parameter-overrides CorsAllowedOrigins="https://$SUB_DOMAIN.$DOMAIN_NAME,http://$SUB_DOMAIN.$DOMAIN_NAME.s3-website-us-east-1.amazonaws.com,http://localhost:3000" \
+            Branch="${GITHUB_HEAD_REF#*/}"
 
   Build-Deploy-Frontend:
     needs: Build-Deploy-Backend
@@ -74,12 +76,22 @@ jobs:
           echo "Building frontend with API URL: $API_URL"
           REACT_APP_BASE_URL="$API_URL" REACT_APP_BRANCH="${GITHUB_HEAD_REF}" npm run-script build
 
-      - name: Invalidate CDN Cache
+      - name: Invalidate Ephemeral CDN Cache
         if: env.EXCLUDE_EPHEMERAL_CDN != 'true'
         run: |
           aws configure set preview.cloudfront true
           DISTRIBUTION_ID=$(aws cloudformation describe-stacks \
           --stack-name "${GITHUB_HEAD_REF#*/}-$BASE_STACK_NAME-StaticSite" \
+          --query 'Stacks[0].Outputs[?OutputKey==`DistributionId`].OutputValue' \
+          --output text)
+          aws cloudfront create-invalidation --distribution-id "$DISTRIBUTION_ID" --paths "/*"
+
+      - name: Invalidate Reusable CDN Cache
+        if: env.REUSABLE_CDN == 'true'
+        run: |
+          aws configure set preview.cloudfront true
+          DISTRIBUTION_ID=$(aws cloudformation describe-stacks \
+          --stack-name "$BASE_STACK_NAME-StaticSite" \
           --query 'Stacks[0].Outputs[?OutputKey==`DistributionId`].OutputValue' \
           --output text)
           aws cloudfront create-invalidation --distribution-id "$DISTRIBUTION_ID" --paths "/*"
