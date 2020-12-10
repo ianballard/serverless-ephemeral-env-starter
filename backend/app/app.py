@@ -17,3 +17,6 @@ def lambda_handler(event, context):
             "message": "hello world!",
         }),
     }
+
+def job(event, context):
+    return "job ran"
