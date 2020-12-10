@@ -77,14 +77,22 @@ reason; the possibilities for this are endless.
             ]
         }
         ```
-    - EXCLUDE_EPHEMERAL_CDN - set this to true if you do not want to deploy your site to cloud front. 
+    - EXCLUDE_EPHEMERAL_CDN - set this to true if you do not want to deploy your ephemeral site to cloud front. 
     Otherwise, do not add it to the secrets.
         - **Note**  deploying to cloudfront has many dependencies that require validation and can increase deployment 
         times to upwards of 30 minutes, and in some cases can cause timeouts.
+    - REUSABLE_CDN - set this to true if you do want to reuse the same cloudfront distribution for all ephemeral environments.
+      Otherwise, do not add it to the secrets. 
+        - **Note**  Setting this will create a Lambda@Edge function that is run at each cloudfront edge location upon 
+          each origin(s3 bucket hosting the frontend code) request and will route to the origin specified by a cookie 
+          called "origin". In other words, set the origin cookie in your browser to be routed to the origin of your 
+          choosing. Note, you may need to clear your browser cache each time you change the cookie's value.
+
 5. Create your main Static Site Stack (this should be a one time operation)
     - Navigate to ./infra
     - run `npm run build`
-    - If you have a registered domain and wish to deploy to cloudfront
+    - If you have a registered domain and wish to deploy to cloudfront (if you want to reuse the same cloudfront 
+      distribution, add the `-c reusableCDN=true` to the following commands).
         - If wish to deploy to 
         [cloudfront](https://aws.amazon.com/premiumsupport/knowledge-center/cloudfront-https-requests-s3/) you need 
         to have this registered with a domain registrar like 
