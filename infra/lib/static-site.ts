@@ -111,22 +111,22 @@ export class StaticSite extends cdk.Stack {
 
       }
 
-      // TLS certificate
-      const certificateArn = new acm.DnsValidatedCertificate(this, siteDomain + '-SiteCertificate', {
-        domainName: siteDomain,
-        hostedZone: zone,
-        region: 'us-east-1', // Cloudfront only checks this region for certificates.
-      }).certificateArn;
-      new cdk.CfnOutput(this, 'Certificate', { value: certificateArn });
+      // // TLS certificate
+      // const certificateArn = new acm.DnsValidatedCertificate(this, siteDomain + '-SiteCertificate', {
+      //   domainName: siteDomain,
+      //   hostedZone: zone,
+      //   region: 'us-east-1', // Cloudfront only checks this region for certificates.
+      // }).certificateArn;
+      // new cdk.CfnOutput(this, 'Certificate', { value: certificateArn });
 
       // CloudFront distribution that provides HTTPS
       const distribution = new cloudfront.CloudFrontWebDistribution(this, siteDomain + '-SiteDistribution', {
-        aliasConfiguration: {
-          acmCertRef: certificateArn,
-          names: [ siteDomain ],
-          sslMethod: cloudfront.SSLMethod.SNI,
-          securityPolicy: cloudfront.SecurityPolicyProtocol.TLS_V1_2_2019,
-        },
+        // aliasConfiguration: {
+        //   acmCertRef: certificateArn,
+        //   names: [ siteDomain ],
+        //   sslMethod: cloudfront.SSLMethod.SNI,
+        //   securityPolicy: cloudfront.SecurityPolicyProtocol.TLS_V1_2_2019,
+        // },
         originConfigs: [
           {
             s3OriginSource: {
