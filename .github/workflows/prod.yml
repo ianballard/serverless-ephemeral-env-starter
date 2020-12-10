@@ -71,7 +71,7 @@ jobs:
           echo "Building frontend with API URL: $API_URL"
           REACT_APP_BASE_URL="$API_URL" REACT_APP_BRANCH="${GITHUB_HEAD_REF}" npm run-script build
       - name: Invalidate CDN Cache
-        if: env.EXCLUDE_EPHEMERAL_CDN != 'true' or env.REUSABLE_CDN == 'true'
+        if: env.EXCLUDE_EPHEMERAL_CDN != 'true' || env.REUSABLE_CDN == 'true'
         run: |
           aws configure set preview.cloudfront true
           DISTRIBUTION_ID=$(aws cloudformation describe-stacks \
