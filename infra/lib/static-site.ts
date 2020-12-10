@@ -62,7 +62,7 @@ export class StaticSite extends cdk.Stack {
                         for (let i = 0; i < headers.cookie.length; i++) {
                             if (headers.cookie[i].value.includes('origin')) {
                                 console.log('Origin cookie found: ' + headers.cookie[i].value);
-                                let target = headers.cookie[i].value.replace('origin=', '') + ${staticSiteProps.domainName} + ".s3.amazonaws.com"
+                                let target = headers.cookie[i].value.replace('origin=', '') + ".${staticSiteProps.domainName}.s3.amazonaws.com"
                                 headers['host'] = [{key: 'host',          value: target}];
                                 origin.s3.domainName = target;
                                 console.log('Modified target: ' + target);
@@ -146,6 +146,8 @@ export class StaticSite extends cdk.Stack {
         ]
       });
       new cdk.CfnOutput(this, 'DistributionId', { value: distribution.distributionId });
+
+      new cdk.CfnOutput(this, 'DistributionDomainName', { value: distribution.distributionDomainName });
 
       // Route53 alias record for the CloudFront distribution
       new route53.ARecord(this, siteDomain + '-SiteAliasRecord', {
