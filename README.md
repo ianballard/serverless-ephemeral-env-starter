@@ -137,7 +137,4 @@ reason; the possibilities for this are endless.
     - This will kick off the Delete Ephemeral Env CI/CD github action.
     - This will also kick off the Main CI/CD github action and deploy the branch to prod.
     - Make sure the message you changed in the backend is displayed on your prod site.
-
     
-    
-
