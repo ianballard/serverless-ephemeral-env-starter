@@ -26,7 +26,8 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
       - name: Test
-        if: {{"$BRANCH" == ''}}
+        if: ${{ "$BRANCH" == '' }}
         run: |
-          export BRANCH=$GITHUB_HEAD_REF
-          echo "$BRANCH"
+          API_URL=https://dpc5lq2ljg.execute-api.us-west-2.amazonaws.com/Prod/v
+          echo "Building frontend with API URL: $API_URL"
+          REACT_APP_BASE_URL="$API_URL" REACT_APP_BRANCH="${GITHUB_HEAD_REF}" CI=false REACT_APP_ENV=development REACT_APP_SENDBIRD_APPLICATION_ID=D02998A8-6707-470B-AE33-C3C8A2E05780 REACT_APP_ENABLE_MESSAGE_NOTIFICATIONS_UPDATE=true REACT_APP_RECAPTCHA_SITE_KEY=6LcQCvQUAAAAAIhkl2y05viPh7zJ3eTOL3O8ZH49 npm run-script build
