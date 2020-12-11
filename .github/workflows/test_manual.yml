@@ -22,8 +22,7 @@ jobs:
         if: env.BRANCH == ''
         run: |
           echo "${GITHUB_HEAD_REF}"
-          export BRANCH="${GITHUB_HEAD_REF}"
-          echo "{BRANCH}={${GITHUB_HEAD_REF}}" >> $GITHUB_ENV
+          echo "BRANCH=${GITHUB_HEAD_REF}" >> $GITHUB_ENV
       - name: Test 2
         if: env.BRANCH != ''
         run: |
