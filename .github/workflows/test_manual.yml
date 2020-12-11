@@ -23,7 +23,7 @@ jobs:
         run: |
           echo "${GITHUB_HEAD_REF}"
           export BRANCH="${GITHUB_HEAD_REF}"
-          echo "$BRANCH"
+          echo "{BRANCH}={${GITHUB_HEAD_REF}}" >> $GITHUB_ENV
       - name: Test 2
         if: env.BRANCH != ''
         run: |
