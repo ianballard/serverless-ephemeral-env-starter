@@ -9,7 +9,7 @@ on:
         default: ''
   pull_request:
     branches: [ master ]
-    types: [ opened ]
+    types: [ opened, synchronize ]
 
 env:
   BRANCH: ${{ github.event.inputs.branch }}
@@ -21,7 +21,8 @@ jobs:
       - name: Test 1
         if: env.BRANCH == ''
         run: |
-          export BRANCH=$"${GITHUB_HEAD_REF}"
+          echo "${GITHUB_HEAD_REF}"
+          export BRANCH="${GITHUB_HEAD_REF}"
           echo "$BRANCH"
       - name: Test 2
         if: env.BRANCH != ''
